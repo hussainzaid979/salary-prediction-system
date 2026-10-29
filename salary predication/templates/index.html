@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Salary Prediction Based on Experience System | Localhost ML App</title>
+  <!-- Chart.js CDN for interactive real-time plotting -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- Top Navigation & Header -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand">
+        <div class="logo-icon">💼</div>
+        <div>
+          <h1>Salary Prediction System</h1>
+          <p class="tagline">Machine Learning Predictive Analytics Engine</p>
+        </div>
+      </div>
+      <div class="status-badge">
+        <span class="status-dot"></span>
+        <span>Localhost Active: <strong>http://127.0.0.1:5000</strong></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-container">
+
+    <!-- Hero / Prediction Engine Section -->
+    <div class="grid-layout">
+
+      <!-- Left Column: Input Controller & Interactive Form -->
+      <section class="card input-card">
+        <div class="card-header">
+          <div class="badge-icon">🔮</div>
+          <div>
+            <h2>Predict Salary</h2>
+            <p class="subtitle">Enter professional experience to calculate estimated market compensation.</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="label-row">
+            <label for="expInput">Years of Experience:</label>
+            <span class="value-highlight" id="expDisplay">4.5 Years</span>
+          </div>
+
+          <!-- Synchronized Range Slider -->
+          <input type="range" id="expSlider" min="0" max="25" step="0.1" value="4.5" class="slider">
+
+          <!-- Direct Numeric Input -->
+          <div class="input-addon-group">
+            <input type="number" id="expInput" min="0" max="50" step="0.1" value="4.5" class="number-input">
+            <span class="addon-text">Years</span>
+          </div>
+        </div>
+
+        <!-- Quick Milestone Chips -->
+        <div class="presets-section">
+          <label class="presets-label">Quick Milestones:</label>
+          <div class="preset-chips">
+            <button class="chip" onclick="setExperience(1.0)">1.0 yr (Junior)</button>
+            <button class="chip" onclick="setExperience(3.0)">3.0 yrs (Associate)</button>
+            <button class="chip" onclick="setExperience(5.0)">5.0 yrs (Mid-Level)</button>
+            <button class="chip" onclick="setExperience(7.5)">7.5 yrs (Senior)</button>
+            <button class="chip" onclick="setExperience(10.0)">10.0 yrs (Lead)</button>
+            <button class="chip" onclick="setExperience(15.0)">15.0 yrs (Principal)</button>
+          </div>
+        </div>
+
+        <!-- Model Configuration & Dataset Switcher Widget -->
+        <div class="retrain-widget">
+          <h3>⚙️ Model & Dataset Settings</h3>
+          <div class="settings-grid">
+            <div class="setting-item">
+              <label for="datasetSelect">Active Database:</label>
+              <select id="datasetSelect" class="styled-select">
+                <option value="default" {% if dataset_id == 'default' %}selected{% endif %}>Canonical Sample (10 Rows)</option>
+                <option value="market" {% if dataset_id == 'market' %}selected{% endif %}>Real Market Extended (30 Rows)</option>
+              </select>
+            </div>
+            <div class="setting-item">
+              <label for="modelSelect">Algorithm:</label>
+              <select id="modelSelect" class="styled-select">
+                <option value="linear" {% if model_type == 'linear' %}selected{% endif %}>Simple Linear Regression</option>
+                <option value="polynomial" {% if model_type == 'polynomial' %}selected{% endif %}>Polynomial Regression (Deg 2)</option>
+              </select>
+            </div>
+          </div>
+          <button id="retrainBtn" class="btn btn-secondary" onclick="handleRetrain()">
+            🔄 Retrain & Refresh Pipeline
+          </button>
+        </div>
+      </section>
+
+      <!-- Right Column: Live Prediction Results Display -->
+      <section class="card result-card">
+        <div class="card-header">
+          <div class="badge-icon success-icon">💰</div>
+          <div>
+            <h2>Predicted Compensation</h2>
+            <span id="tierBadge" class="tier-pill">Mid-Level Professional</span>
+          </div>
+        </div>
+
+        <!-- Main Annual Display -->
+        <div class="salary-highlight">
+          <span class="currency-label">Estimated Annual Salary (USD)</span>
+          <div class="big-salary" id="annualSalary">$85,000.00</div>
+          <div class="interval-note">
+            95% Confidence Interval: <strong id="intervalRange">$85,000.00 – $85,000.00</strong>
+          </div>
+        </div>
+
+        <!-- Breakdown Grid (Monthly, Weekly, Hourly) -->
+        <div class="breakdown-grid">
+          <div class="breakdown-item">
+            <span class="item-label">Monthly Comp</span>
+            <span class="item-val" id="monthlySalary">$7,083.33</span>
+          </div>
+          <div class="breakdown-item">
+            <span class="item-label">Weekly Comp</span>
+            <span class="item-val" id="weeklySalary">$1,634.62</span>
+          </div>
+          <div class="breakdown-item">
+            <span class="item-label">Hourly Equivalent</span>
+            <span class="item-val" id="hourlySalary">$40.87 / hr</span>
+          </div>
+        </div>
+
+        <!-- Formula Callout Box -->
+        <div class="formula-box">
+          <span class="formula-title">📐 Active Mathematical Formula:</span>
+          <code id="formulaText">{{ equation }}</code>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Interactive Visual Regression Curve Section -->
+    <section class="card chart-card">
+      <div class="card-header-split">
+        <div>
+          <h2>📈 Live Interactive Regression Curve</h2>
+          <p class="subtitle">Scatter points represent observations; the curve shows the model's fitted equation. The gold pin marks your query point in real time.</p>
+        </div>
+        <div class="chart-legend-custom">
+          <span class="legend-dot data-dot"></span> Observations
+          <span class="legend-line"></span> Fitted Line
+          <span class="legend-dot target-dot"></span> Query Marker
+        </div>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="regressionChart"></canvas>
+      </div>
+    </section>
+
+    <!-- Model Diagnostics & Metric KPI Cards -->
+    <section class="metrics-section">
+      <h2 class="section-title">📊 Model Statistical Diagnostics & Validation</h2>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <span class="metric-label">R² Score (Goodness of Fit)</span>
+          <span class="metric-value text-green" id="metricR2">{{ "%.4f"|format(metrics.r2_score) }}</span>
+          <span class="metric-desc">Percentage of variance explained by experience</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Adjusted R²</span>
+          <span class="metric-value text-blue" id="metricAdjR2">{{ "%.4f"|format(metrics.adjusted_r2) }}</span>
+          <span class="metric-desc">Penalized for predictor degrees of freedom</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Mean Absolute Error (MAE)</span>
+          <span class="metric-value" id="metricMAE">${{ "{:,.2f}".format(metrics.mae) }}</span>
+          <span class="metric-desc">Average absolute dollar deviation</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Root Mean Squared Error (RMSE)</span>
+          <span class="metric-value" id="metricRMSE">${{ "{:,.2f}".format(metrics.rmse) }}</span>
+          <span class="metric-desc">Standard deviation of model residuals</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Mean Abs Percentage Error (MAPE)</span>
+          <span class="metric-value" id="metricMAPE">{{ "%.2f"|format(metrics.mape_percent) }}%</span>
+          <span class="metric-desc">Relative percentage deviation</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">5-Fold Cross Validation R²</span>
+          <span class="metric-value text-purple" id="metricCV">{{ "%.4f"|format(metrics.cv_r2_mean) }}</span>
+          <span class="metric-desc">Generalization stability across test folds</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Deep-Dive Tabs Section -->
+    <section class="card tabs-card">
+      <div class="tab-headers">
+        <button class="tab-btn active" onclick="switchTab('tab-database')">💾 Database & Statistics</button>
+        <button class="tab-btn" onclick="switchTab('tab-plots')">🖼️ 4-Panel Diagnostic Dashboard</button>
+        <button class="tab-btn" onclick="switchTab('tab-batch')">📑 Batch Milestone Predictor</button>
+      </div>
+
+      <!-- Tab 1: Database Table -->
+      <div id="tab-database" class="tab-content active">
+        <div class="tab-pane-header">
+          <h3>Active Training Database (<span id="dbRecordCount">{{ record_count }}</span> Records)</h3>
+          <p>Verified schema with Experience (Years) and Salary (USD).</p>
+        </div>
+        <div class="table-responsive">
+          <table class="styled-table" id="datasetTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Experience (Years)</th>
+                <th>Salary (USD)</th>
+                <th>Monthly Rate</th>
+                <th>Seniority Tier</th>
+              </tr>
+            </thead>
+            <tbody id="datasetTableBody">
+              <!-- Dynamically populated via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 2: Matplotlib 4-Panel Image -->
+      <div id="tab-plots" class="tab-content">
+        <div class="tab-pane-header">
+          <h3>Matplotlib Analytical Diagnostic Dashboard (300 DPI)</h3>
+          <p>Includes Fitted Line, Error Homoscedasticity Residuals, 1:1 Parity Plot, and Seniority Tier Averages.</p>
+        </div>
+        <div class="image-wrapper">
+          <img id="dashboardImg" src="/static/images/salary_prediction_analysis.png?t=1" alt="Diagnostic Dashboard" class="diagnostic-image">
+        </div>
+      </div>
+
+      <!-- Tab 3: Batch Prediction -->
+      <div id="tab-batch" class="tab-content">
+        <div class="tab-pane-header">
+          <h3>Batch Milestone Evaluation</h3>
+          <p>Enter comma-separated experience years to evaluate multiple milestones simultaneously.</p>
+        </div>
+        <div class="batch-input-row">
+          <input type="text" id="batchInputs" class="text-input" value="1.0, 2.5, 4.0, 6.5, 8.0, 10.0, 12.5" placeholder="e.g. 1.5, 3.0, 5.0, 7.5">
+          <button class="btn btn-primary" onclick="runBatchPrediction()">Run Batch Inference</button>
+        </div>
+        <div class="table-responsive">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>Experience (Years)</th>
+                <th>Predicted Annual (USD)</th>
+                <th>Monthly Equivalent</th>
+                <th>95% Prediction Range</th>
+              </tr>
+            </thead>
+            <tbody id="batchTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="footer-container">
+      <p>Salary Prediction Based on Experience System • Machine Learning & Predictive Analytics</p>
+      <p class="footer-sub">Engineered with Python, Scikit-Learn, Pandas, NumPy, and Flask.</p>
+    </div>
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
